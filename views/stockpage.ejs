@@ -1,0 +1,318 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../../../css/bootstrap.min.css">
+    <link rel="stylesheet" href="/stylesCustom.css">
+    <title>Wealth Simpler |
+        <%= title %>
+    </title>
+</head>
+
+<body class="bg-black text-white">
+    <nav class="navbar text-white">
+        <div class="container-fluid d-flex flex-column text-white">
+            <div class="w-100 d-flex flex-row justify-content-between">
+                <a href="" class="navbar-brand"><img class="watchListbtn" src="../../../watchlist.png" alt="watchList" height="40"></a>
+                <a href="../../../dashboard" class="btn text-white" type="submit"><img class="exitBtn bg-white rounded-circle" src="../../../close.png" alt="exit" height="30"></a>
+            </div>
+        </div>
+    </nav>
+    <div class="w-100">
+
+        <div class="d-flex flex-column align-items-center justify-content-center">
+            <div class="tickerName bg-secondary p-3 rounded-circle fw-bolder mb-3">
+                <%= ticker %>
+            </div>
+            <p class="fw-bold fs-6">
+                <%= requestedStockData.stock.name %>
+            </p>
+            <p class="fw-bolder fs-1">$
+                <%= parseFloat(requestedStockData.quote.amount).toFixed(2) %>
+                    <%= requestedStockData.currency %>
+            </p>
+            <p class="text-white-50">
+                <%= (parseFloat(requestedStockData.quote.amount) - parseFloat(requestedStockData.quote.previous_close)).toFixed(2) %> (
+                    <%= (((parseFloat(requestedStockData.quote.amount) - parseFloat(requestedStockData.quote.previous_close)) /  parseFloat(requestedStockData.quote.previous_close))*100).toFixed(2) %>%) past day</p>
+        </div>
+
+        <div class="w-100 p-0 m-0 h-60">
+            <canvas id="ctx"></canvas>
+        </div>
+        <div aria-label="Chart Range Buttons" role="group" class="btn-group d-flex justify-content-around pt-2">
+            <button id="1d" class="active rangeButton btn-secondary rounded-circle p-2">1D</button>
+            <button id="1w" class="rangeButton btn-secondary rounded-circle p-2">1W</button>
+            <button id="1m" class="rangeButton btn-secondary rounded-circle p-2">1M</button>
+            <button id="3m" class="rangeButton btn-secondary rounded-circle p-2">3M</button>
+            <button id="1y" class="rangeButton btn-secondary rounded-circle p-2">1Y</button>
+            <button id="5y" class="rangeButton btn-secondary rounded-circle p-2">5Y</button>
+        </div>
+        <div class="mt-4 px-3">
+            <div class="d-flex flex-column">
+                <div class="border-bottom border-secondary">
+                    <p class="fw-bold">Holdings</p>
+                </div>
+                <div class="border-bottom border-secondary">
+                    <div class=" d-flex flex-column align-content-end">
+                        <p>Account</p>
+                        <p class="fs-3 fw-bold ">TFSA</p>
+                    </div>
+                </div>
+                <div class="d-flex flex-row border-bottom border-secondary">
+                    <div class="col-6 d-flex flex-column align-content-end">
+                        <p>Shares</p>
+                        <p class="fs-3 fw-bold ">
+                            <%= requestedStockData.quantity %>
+                        </p>
+                    </div>
+                    <div class=" d-flex flex-column align-content-end">
+                        <p>Total Value</p>
+                        <p class="fs-3 fw-bold ">$
+                            <%= (requestedStockData.quantity * parseFloat(requestedStockData.quote.amount)).toFixed(2) %>
+                        </p>
+                    </div>
+                </div>
+                <div class="d-flex flex-row border-bottom border-secondary">
+                    <div class="col-6 d-flex flex-column align-content-end">
+                        <p>Average Price</p>
+                        <p class="fs-3 fw-bold ">
+                            <%= (requestedStockData.book_value.amount / requestedStockData.quantity).toFixed(4) %>
+                        </p>
+                    </div>
+                    <div class=" d-flex flex-column align-content-end">
+                        <p>% of my portfolio</p>
+                        <p class="fs-3 fw-bold ">
+                            <%= (((requestedStockData.quantity * parseFloat(requestedStockData.quote.amount)) / recentAccountHistory.value.amount) * 100).toFixed(2)  %> %</p>
+                    </div>
+                </div>
+                <div class="border-bottom border-secondary">
+                    <div class=" d-flex flex-column align-content-end">
+                        <p>Today's Return</p>
+                        <p class="fs-3 fw-bold ">$
+                            <%= ((parseFloat(requestedStockData.quote.amount) - parseFloat(requestedStockData.quote.previous_close)) * parseFloat(requestedStockData.quantity)).toFixed(2) %> (
+                                <%= (((parseFloat(requestedStockData.quote.amount) - parseFloat(requestedStockData.quote.previous_close)) /  parseFloat(requestedStockData.quote.previous_close))*100).toFixed(2) %>%)</p>
+                        </p>
+                    </div>
+                </div>
+                <div class="border-bottom border-secondary">
+                    <div class=" d-flex flex-column align-content-end">
+                        <p>Total Return</p>
+                        <p class="fs-3 fw-bold ">
+                            $
+                            <%= ((requestedStockData.quantity * parseFloat(requestedStockData.quote.amount)) - requestedStockData.book_value.amount).toFixed(2) %> (
+                                <%= ((((requestedStockData.quantity * parseFloat(requestedStockData.quote.amount)) - requestedStockData.book_value.amount) / requestedStockData.book_value.amount) *100).toFixed(2) %>%)
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-5 px-3">
+            <div class="d-flex flex-column">
+                <div class="border-bottom border-secondary">
+                    <p class="fw-bold">Stats</p>
+                </div>
+                <div class="pt-2 d-flex flex-row justify-content-between">
+                    <div class="col-5 d-flex flex-row align-items-end justify-content-between border-bottom border-secondary">
+                        <p>Bid</p>
+                        <p class="fs-3 fw-bold ">
+                            <%= parseFloat(requestedStockData.quote.bid).toFixed(2) %>
+                        </p>
+                    </div>
+                    <div class=" col-5 d-flex flex-row  align-items-end justify-content-between border-bottom border-secondary">
+                        <p>Mkt Cap</p>
+                        <p class="fs-3 fw-bold ">NEEDS DATA M</p>
+                    </div>
+                </div>
+                <div class="pt-2 d-flex flex-row justify-content-between">
+                    <div class="col-5 d-flex flex-row  align-items-end justify-content-between border-bottom border-secondary">
+                        <p>ASK</p>
+                        <p class="fs-3 fw-bold ">
+                            <%= parseFloat(requestedStockData.quote.ask).toFixed(2) %>
+                        </p>
+                    </div>
+                    <div class="col-5 d-flex flex-row  align-items-end justify-content-between border-bottom border-secondary">
+                        <p>P/E</p>
+                        <p class="fs-3 fw-bold ">-</p>
+                    </div>
+                </div>
+                <div class="pt-2 d-flex flex-row justify-content-between">
+                    <div class="col-5 d-flex flex-row  align-items-end justify-content-between border-bottom border-secondary">
+                        <p>Last Sale</p>
+                        <p class="fs-3 fw-bold ">NEEDS DATA</p>
+                    </div>
+                    <div class="col-5 d-flex flex-row  align-items-end justify-content-between border-bottom border-secondary">
+                        <p>52W high</p>
+                        <p class="fs-3 fw-bold ">NEEDS DATA</p>
+                    </div>
+                </div>
+                <div class="pt-2 d-flex flex-row justify-content-between">
+                    <div class="col-5 d-flex flex-row  align-items-end justify-content-between border-bottom border-secondary">
+                        <p>OPEN</p>
+                        <p class="fs-3 fw-bold ">
+                            <%= parseFloat(requestedStockData.quote.open).toFixed(2) %>
+                        </p>
+                    </div>
+                    <div class="col-5 d-flex flex-row  align-items-end justify-content-between border-bottom border-secondary">
+                        <p>52W low</p>
+                        <p class="fs-3 fw-bold ">NEEDS DATA</p>
+                    </div>
+                </div>
+                <div class="pt-2 d-flex flex-row justify-content-between">
+                    <div class="col-5 d-flex flex-row  align-items-end justify-content-between border-bottom border-secondary">
+                        <p>High</p>
+                        <p class="fs-3 fw-bold ">
+                            <%= parseFloat(requestedStockData.quote.high ).toFixed(2) %>
+                        </p>
+                    </div>
+                    <div class="col-5 d-flex flex-row  align-items-end justify-content-between border-bottom border-secondary">
+                        <p>Vol</p>
+                        <p class="fs-3 fw-bold ">
+                            <%= requestedStockData.quote.volume / 1000%>K</p>
+                    </div>
+                </div>
+                <div class="pt-2 d-flex flex-row justify-content-between">
+                    <div class="col-5 d-flex flex-row  align-items-end justify-content-between border-bottom border-secondary">
+                        <p>Low</p>
+                        <p class="fs-3 fw-bold ">
+                            <%= parseFloat(requestedStockData.quote.low).toFixed(2) %>
+                        </p>
+                    </div>
+                    <div class="col-5 d-flex flex-row  align-items-end justify-content-between border-bottom border-secondary">
+                        <p>Avg vol</p>
+                        <p class="fs-3 fw-bold ">NEEDS DATA</p>
+                    </div>
+                </div>
+                <div class="pt-2 d-flex flex-row justify-content-between">
+                    <div class="col-5 d-flex flex-row  align-items-end justify-content-between border-bottom border-secondary">
+                        <p>Exchange</p>
+                        <p class="fs-3 fw-bold ">
+                            <%= requestedStockData.stock.primary_exchange %>
+                        </p>
+                    </div>
+                    <div class="col-5 d-flex flex-row  align-items-end justify-content-between border-bottom border-secondary">
+                        <p>Yield</p>
+                        <p class="fs-3 fw-bold ">NEEDS DATA</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-5 px-3 mb-5">
+            <div class="d-flex flex-column">
+                <div class="border-bottom border-secondary">
+                    <p class="fw-bold">Activities</p>
+                </div>
+                <div class="pt-2 d-flex flex-row justify-content-between border-bottom border-secondary">
+                    <div class="d-flex flex-column justify-content-between">
+                        <p class="fw-bold">
+                            <%= ticker %> Market Sell</p>
+                        <p class="">Dec 7, 2020</p>
+                    </div>
+                    <div class="d-flex flex-row align-items-center ">
+                        <p class="fs-3 fw-bold ">$81.50</p>
+                    </div>
+                </div>
+                <div class="pt-2 d-flex flex-row justify-content-between border-bottom border-secondary">
+                    <div class="d-flex flex-column justify-content-between">
+                        <p class="fw-bold">
+                            <%= ticker %> Market Sell</p>
+                        <p class="">Dec 7, 2020</p>
+                    </div>
+                    <div class="d-flex flex-row align-items-center ">
+                        <p class="fs-3 fw-bold ">$81.50</p>
+                    </div>
+                </div>
+                <div class="pt-2 d-flex flex-row justify-content-between border-bottom border-secondary">
+                    <div class="d-flex flex-column justify-content-between">
+                        <p class="fw-bold">
+                            <%= ticker %> Market Sell</p>
+                        <p class="">Dec 7, 2020</p>
+                    </div>
+                    <div class="d-flex flex-row align-items-center ">
+                        <p class="fs-3 fw-bold ">$81.50</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+    <footer>
+        <script src="../../../js/bootstrap.min.js "></script>
+        <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0 "></script>
+        <script src="../../../chart_js/chart.min.js "></script>
+        <script src="../../../chart_js_annotations/chartjs-plugin-annotation.min.js "></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1 "></script>
+        <script>
+            //Stock Graph
+            var graphConfig = <%-(graphConfig) %>
+            console.log(graphConfig)
+            var poly1 = [...graphConfig.data.datasets[0].data]
+            poly1.unshift({
+                x: graphConfig.data.datasets[0].data[0].x,
+                y: 0
+            })
+            poly1.push({
+                x: graphConfig.data.datasets[0].data[graphConfig.data.datasets[0].data.length - 1].x,
+                y: 0
+            })
+            var maxValue = graphConfig.options.annotations.line1.yMax
+            var chart = new Chart(
+                document.getElementById('ctx'),
+                graphConfig,
+            );
+            temp = document.getElementById('ctx');
+            temp2 = temp.getContext("2d")
+            var fillGradient = temp2.createLinearGradient(0, 0, 0, 600)
+            fillGradient.addColorStop(0, "#7CB7B6")
+            fillGradient.addColorStop(1, "black")
+            chart.config.data.datasets[0].backgroundColor = fillGradient
+            chart.update();
+        </script>
+        <script src="../../../bundle.js">
+        </script>
+        <script>
+            //Change Account Graph Range
+            const rangeButtons = document.querySelectorAll('button.rangeButton')
+            var ticker = "<%= ticker%>"
+            var exchange = "<%= requestedStockData.stock.primary_exchange %>"
+            rangeButtons.forEach(element => {
+                element.addEventListener('click', (e) => {
+                    rangeButtons.forEach(element => {
+                        if (element !== e.target) {
+                            element.classList.remove("active")
+                        }
+                    });
+                    e.target.classList.add("active")
+                    const endpoint = `/dashboard/stock/update/${exchange}/${ticker}/${e.target.id}`
+                    fetch(endpoint, {
+                            method: 'GET',
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            chart.config.data = data.graphConfig.data
+                            poly1 = [...data.graphConfig.data.datasets[0].data]
+                            poly1.unshift({
+                                x: data.graphConfig.data.datasets[0].data[0].x,
+                                y: 0
+                            })
+                            poly1.push({
+                                x: data.graphConfig.data.datasets[0].data[graphConfig.data.datasets[0].data.length - 1].x,
+                                y: 0
+                            })
+                            maxValue = data.graphConfig.options.annotations.line1.yMax
+                            chart.config.options.annotations.line1.yMax = maxValue
+                            chart.config.options.scales.xAxis.min = data.graphConfig.data.datasets[0].data[0].x
+                            chart.config.options.scales.xAxis.max = data.graphConfig.data.datasets[0].data[data.graphConfig.data.datasets[0].data.length - 1].x
+                            chart.update()
+                        })
+                        .catch(err => console.log(err))
+                })
+            });
+        </script>
+    </footer>
+</body>
+
+</html>

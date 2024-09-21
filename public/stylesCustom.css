@@ -1,0 +1,60 @@
+.h-60 {
+    height: 60% !important;
+}
+
+.bg-black {
+    background-color: black !important;
+}
+
+.rangeButton {
+    background-color: black;
+    color: white;
+    font-weight: 800;
+    border: none;
+    width: 50px;
+    height: 50px;
+}
+
+.rangeButton:hover {
+    background-color: white;
+    color: black;
+}
+
+.searchBtn {
+    filter: invert();
+}
+
+.profileBtn {
+    filter: invert();
+}
+
+.accountValue {
+    font-size: 40px;
+    font-weight: bold;
+}
+
+.stockButton {
+    cursor: pointer;
+}
+
+.watchListbtn {
+    filter: invert();
+}
+
+.exitBtn {
+    filter: invert();
+}
+
+.downArrow {
+    filter: invert();
+}
+
+.hidden {
+    display: none;
+}
+
+.dropdown-menu[data-bs-popper] {
+    left: unset;
+    right: 0;
+    min-width: unset;
+}

@@ -1,0 +1,33 @@
+<nav class="navbar text-white">
+    <div class="container-fluid d-flex flex-column text-white">
+        <div class="w-100 d-flex flex-row justify-content-between">
+            <a href="" class="navbar-brand"><img class="profileBtn" src="user.png" alt="" height="40"></a>
+            <button class="btn" type="submit"> <img class="searchBtn" src="magnifying-glass.png" alt="" height="40"></button>
+        </div>
+
+        <div class="w-100 d-flex flex-row justify-content-between align-items-end">
+            <h6>
+                <%= accountName %>
+            </h6>
+            <div class="dropdown">
+                <button class="btn dropdown-toggle text-white" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">View Accounts</button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                    <% if (tradeAccounts.personal) { %>
+                        <a href="/dashboard?account=Personal" class="dropdown-item">Personal</a>
+                        <% } %>
+                            <% if (tradeAccounts.crypto) { %>
+                                <a href="/dashboard?account=Crypto" class="dropdown-item">Crypto</a>
+                                <% } %>
+                                    <% if (tradeAccounts.tfsa) { %>
+                                        <a href="/dashboard?account=TFSA" class="dropdown-item">TFSA</a>
+                                        <% } %>
+                                            <% if (tradeAccounts.rrsp) { %>
+                                                <a href="/dashboard?account=RRSP" class="dropdown-item">RRSP</a>
+                                                <% } %>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</nav>

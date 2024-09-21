@@ -1,0 +1,362 @@
+<html lang="en">
+<%- include("./partials/loggedInHead.ejs") %>
+
+    <body class="bg-black text-white">
+        <div class="main container-fluid">
+            <%- include("./partials/loggedInFooter.ejs") %>
+
+                <%- include("./partials/loggedInNav.ejs", {accountName: currentAccount, tradeAccounts: tradeAccounts}) %>
+                    <div class="w-100">
+                        <div class="d-flex flex-row align-items-end justify-content-center">
+                            <h1 class="accountValue">$
+                                <% if (recentAccountHistory) { %>
+                                    <%= (recentAccountHistory.value.amount).toFixed(2) %>
+                                        <% } %>
+                            </h1>
+                            <h4>CAD</h4>
+                        </div>
+                        <h6 class="text-center">Down $
+                            <% if (recentAccountHistory) { %>
+                                <%= (recentAccountHistory.relative_equity_earnings.amount).toFixed(2) %>
+                                    <% } %> (
+
+                                        <% if (recentAccountHistory) { %>
+                                            <%= (recentAccountHistory.relative_equity_earnings.percentage * 100 ).toFixed(2) %>
+                                                <% } %>
+                                                    ) past day</h6>
+                        <div>
+                            <div class="w-100 p-0 m-0 h-60">
+                                <canvas id='ctx'></canvas>
+                            </div>
+                            <div aria-label="Chart Range Buttons" role="group" class="btn-group d-flex justify-content-around pt-2">
+                                <button id="1d" class="active rangeButton btn-secondary rounded-circle p-2">1D</button>
+                                <button id="1w" class="rangeButton btn-secondary rounded-circle p-2">1W</button>
+                                <button id="1m" class="rangeButton btn-secondary rounded-circle p-2">1M</button>
+                                <button id="3m" class="rangeButton btn-secondary rounded-circle p-2">3M</button>
+                                <button id="1y" class="rangeButton btn-secondary rounded-circle p-2">1Y</button>
+                                <button id="all" class="rangeButton btn-secondary rounded-circle p-2">ALL</button>
+
+                            </div>
+                            <div class="d-flex flex-column px-2 mt-3">
+                                <div class="d-flex justify-content-between align-items-end mb-2">
+                                    <h6>Portfolio</h6>
+                                    <button id="todayOrTotal" class="btn-secondary rounded-pill ">Today's Price</button>
+                                </div>
+                                <div class="d-flex align-items-center mb-2 justify-content-between">
+                                    <button data-sort_direction="ascending" id="sortByTicker" class="col-3 bg-black border-0 text-white rounded-pill text-start">Ticker <img height="10px" class="downArrow" src="down-arrow.svg" alt=""></button>
+                                    <div class="col-4"></div>
+                                    <div class="d-flex col-3 justify-content-end">
+                                        <input id="sortByPercentage" type="checkbox" class="form-check-input">
+                                        <label for="sortByPercentage" class="form-check-label">%</label>
+                                        <button data-sort_direction="none" id="sortByChange" class=" text-white bg-black border-0 rounded-pill text-start">Change <img height="10px" class="downArrow hidden" src="down-arrow.svg" alt=""></button>
+
+                                    </div>
+
+                                </div>
+                                <div class="stockButtonHolder">
+                                    <% var stocksLoaded = 0 %>
+                                        <% holdings.forEach(holding => { %>
+                                            <% stocksLoaded += 1 %>
+                                                <div data-total="<%= parseFloat(holding.quote.amount).toFixed(2) * holding.quantity%>" data-price="<%= parseFloat(holding.quote.amount).toFixed(2)%>" data-change="<%= (parseFloat(holding.quote.amount) - parseFloat(holding.quote.previous_close)).toFixed(2) %>"
+                                                    data-percent_change="<%= ( (parseFloat(holding.quote.amount) - parseFloat(holding.quote.previous_close)) / parseFloat(holding.quote.previous_close) * 100 ).toFixed(2) %>" data-exchange="<%=holding.stock.primary_exchange %>"
+                                                    data-stockname="<%=holding.stock.symbol %>" class="stockButton d-flex flex-row align-items-center justify-content-between border-top mt-1 pt-2 border-secondary">
+                                                    <div class="d-flex flex-column col-2">
+                                                        <h4>
+                                                            <%=holding.stock.symbol%>
+                                                        </h4>
+                                                        <h6>
+                                                            <%=holding.stock.primary_exchange%>
+                                                        </h6>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <canvas id="<%=holding.stock.symbol %>"></canvas>
+                                                    </div>
+                                                    <div class="d-flex flex-column col-4">
+                                                        <h4 class="text-end">$
+                                                            <%= parseFloat(holding.quote.amount).toFixed(2)%>
+                                                                <%=holding.quote.currency%>
+                                                        </h4>
+                                                        <h6 class="text-end">
+                                                            <% if ((parseFloat(holding.quote.amount) - parseFloat(holding.quote.previous_close)) > 0) { %>
+                                                                +
+                                                                <% } %>
+                                                                    <%= (parseFloat(holding.quote.amount) - parseFloat(holding.quote.previous_close)).toFixed(2) %> (
+                                                                        <%= ( (parseFloat(holding.quote.amount) - parseFloat(holding.quote.previous_close)) / parseFloat(holding.quote.previous_close) * 100 ).toFixed(2) %>%)
+                                                                            <%=holding.quote.currency%>
+                                                        </h6>
+                                                    </div>
+                                                </div>
+                                                <% if (stocksLoaded === holdings.length) { %>
+                                                    <script>
+                                                        //MiniStockGraphs
+                                                        function loadMiniStockGraphs() {
+                                                            var holdings = <%-stringedHoldings%>
+                                                                //console.log(holdings)
+                                                            holdings.forEach(holding => {
+                                                                holdingData = []
+                                                                holding.sparkline.forEach(spark => {
+                                                                    holdingData.push({
+                                                                        x: Date.parse(spark.date + ' ' + spark.time + ' ' + " EST"),
+                                                                        y: parseFloat(spark.adjusted_price).toFixed(2)
+                                                                    })
+                                                                });
+                                                                holdingData.shift()
+                                                                    //console.log(holdingData)
+                                                                canvas = document.getElementById(holding.stock.symbol);
+                                                                //console.log(document.getElementById(holding.stock.symbol))
+                                                                miniGraphConfig = {
+                                                                    type: 'line',
+                                                                    data: {
+                                                                        datasets: [{
+                                                                            borderColor: "#E5F1F0",
+                                                                            borderWidth: 3,
+                                                                            data: holdingData,
+                                                                            tension: 0.3
+                                                                        }]
+
+                                                                    },
+                                                                    options: {
+                                                                        events: [],
+                                                                        elements: {
+                                                                            point: {
+                                                                                radius: 0
+                                                                            }
+                                                                        },
+                                                                        plugins: {
+                                                                            legend: {
+                                                                                display: false
+                                                                            },
+                                                                            tooltip: {
+                                                                                display: false
+                                                                            },
+                                                                        },
+                                                                        scales: {
+                                                                            xAxis: {
+                                                                                grid: {
+                                                                                    display: false,
+                                                                                    drawBorder: false,
+                                                                                },
+                                                                                type: 'time',
+                                                                                distribution: 'series',
+                                                                                time: {
+                                                                                    unit: 'minute'
+                                                                                },
+                                                                                ticks: {
+                                                                                    display: false
+                                                                                }
+                                                                            },
+                                                                            yAxis: {
+                                                                                grid: {
+                                                                                    display: false,
+                                                                                    drawBorder: false
+                                                                                },
+                                                                                ticks: {
+                                                                                    display: false
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        ticks: {
+                                                                            source: 'auto'
+                                                                        },
+                                                                    }
+                                                                }
+
+                                                                new Chart(canvas, miniGraphConfig)
+                                                            });
+                                                        }
+
+                                                        loadMiniStockGraphs()
+                                                    </script>
+                                                    <% } %>
+                                                        <% }) %>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+        </div>
+        <script>
+            stockButtons = document.querySelectorAll("div.stockButton")
+            stockButtons.forEach(stockButton => {
+                var stockName = stockButton.dataset.stockname
+                var exchange = stockButton.dataset.exchange
+
+                stockButton.addEventListener('click', (e) => {
+                    const endpoint = `/dashboard/stock/${exchange}/${stockName}`
+                    window.location.href = endpoint;
+
+                })
+            });
+        </script>
+        <script>
+            //Account Graph 
+            var graphConfig = <%-(graphConfig) %>
+            console.log(graphConfig)
+            var poly1 = [...graphConfig.data.datasets[0].data]
+            poly1.unshift({
+                x: graphConfig.data.datasets[0].data[0].x,
+                y: 0
+            })
+            poly1.push({
+                x: graphConfig.data.datasets[0].data[graphConfig.data.datasets[0].data.length - 1].x,
+                y: 0
+            })
+            var maxValue = graphConfig.options.annotations.line1.yMax
+            var chart = new Chart(
+                document.getElementById('ctx'),
+                graphConfig,
+            );
+            temp = document.getElementById('ctx');
+            temp2 = temp.getContext("2d")
+            var fillGradient = temp2.createLinearGradient(0, 0, 0, 600)
+            fillGradient.addColorStop(0, "#7CB7B6")
+            fillGradient.addColorStop(1, "black")
+            chart.config.data.datasets[0].backgroundColor = fillGradient
+            chart.update();
+        </script>
+        <script src="bundle.js">
+        </script>
+        <script>
+            //Change Account Graph Range
+            const rangeButtons = document.querySelectorAll('button.rangeButton')
+            rangeButtons.forEach(element => {
+                element.addEventListener('click', (e) => {
+                    rangeButtons.forEach(element => {
+                        if (element !== e.target) {
+                            element.classList.remove("active")
+                        }
+                    });
+                    e.target.classList.add("active")
+                    const endpoint = `/dashboard/update/${e.target.id}`
+                    fetch(endpoint, {
+                            method: 'GET',
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            chart.config.data = data.graphConfig.data
+                            poly1 = [...data.graphConfig.data.datasets[0].data]
+                            poly1.unshift({
+                                x: data.graphConfig.data.datasets[0].data[0].x,
+                                y: 0
+                            })
+                            poly1.push({
+                                x: data.graphConfig.data.datasets[0].data[graphConfig.data.datasets[0].data.length - 1].x,
+                                y: 0
+                            })
+                            maxValue = data.graphConfig.options.annotations.line1.yMax
+                            chart.config.options.annotations.line1.yMax = maxValue
+                            chart.config.options.scales.xAxis.min = data.graphConfig.data.datasets[0].data[0].x
+                            chart.config.options.scales.xAxis.max = data.graphConfig.data.datasets[0].data[data.graphConfig.data.datasets[0].data.length - 1].x
+                            chart.update()
+                        })
+                        .catch(err => console.log(err))
+                })
+            });
+        </script>
+        <script>
+            const sort_by_ticker = (a, b, direction) => {
+                result = a.dataset.stockname.toLowerCase().localeCompare(b.dataset.stockname.toLowerCase());
+                if (direction === 'descending') {
+                    return -result
+
+                } else if (direction === 'ascending') {
+                    return result
+
+                }
+            }
+            const sort_by_price = (a, b, direction, percentage) => {
+
+                if (percentage) {
+                    result = parseFloat(a.dataset.percent_change) > parseFloat(b.dataset.percent_change) ? 1 : -1;
+                    if (direction === 'descending') {
+                        return -result
+
+                    } else if (direction === 'ascending') {
+                        return result
+
+                    }
+                } else {
+                    result = parseFloat(a.dataset.change) > parseFloat(b.dataset.change) ? 1 : -1;
+                    if (direction === 'descending') {
+                        return -result
+
+                    } else if (direction === 'ascending') {
+                        return result
+
+                    }
+                }
+            }
+            const changeSortButton = document.getElementById("sortByChange")
+            const percentCheckBox = document.getElementById("sortByPercentage")
+            percentCheckBox.addEventListener("click", (e) => {
+                if (changeSortButton.dataset.sort_direction === 'none') {
+
+                } else if (changeSortButton.dataset.sort_direction === 'descending') {
+                    changeSortButton.dataset.sort_direction = 'ascending'
+                    changeSortButton.click()
+                } else if (changeSortButton.dataset.sort_direction === 'ascending') {
+                    changeSortButton.dataset.sort_direction = 'descending'
+                    changeSortButton.click()
+                }
+            })
+            changeSortButton.addEventListener("click", (e) => {
+                const tickerSortArrow = e.target.childNodes[1]
+                tickerSortArrow.classList.remove('hidden')
+                const stockButtonHolder = document.querySelector("div.stockButtonHolder")
+                var stockButtons = document.querySelectorAll("div.stockButton")
+                var percentage = percentCheckBox.checked
+                stockButtons = Array.prototype.slice.call(stockButtons, 0)
+                if (e.target.dataset.sort_direction === 'descending' || e.target.dataset.sort_direction === 'none') {
+                    tickerSortArrow.style.transform = "rotate(180deg)"
+                    e.target.dataset.sort_direction = 'ascending'
+                    stockButtons.sort((a, b) => sort_by_price(a, b, 'ascending', percentage))
+
+                } else if (e.target.dataset.sort_direction === 'ascending') {
+                    tickerSortArrow.style.transform = "rotate(0deg)"
+                    e.target.dataset.sort_direction = 'descending'
+                    stockButtons.sort((a, b) => sort_by_price(a, b, 'descending', percentage))
+
+                }
+                stockButtons.forEach(element => {
+                    stockButtonHolder.appendChild(element)
+                });
+            })
+            const tickerSortButton = document.getElementById("sortByTicker")
+            tickerSortButton.addEventListener("click", (e) => {
+                percentCheckBox.checked = false
+                const tickerSortArrow = e.target.childNodes[1]
+                const stockButtonHolder = document.querySelector("div.stockButtonHolder")
+                var stockButtons = document.querySelectorAll("div.stockButton")
+                stockButtons = Array.prototype.slice.call(stockButtons, 0)
+                if (e.target.dataset.sort_direction === 'descending') {
+                    tickerSortArrow.style.transform = "rotate(0deg)"
+                    e.target.dataset.sort_direction = 'ascending'
+                    stockButtons.sort((a, b) => sort_by_ticker(a, b, 'ascending'))
+
+                } else if (e.target.dataset.sort_direction === 'ascending') {
+                    tickerSortArrow.style.transform = "rotate(180deg)"
+                    e.target.dataset.sort_direction = 'descending'
+                    stockButtons.sort((a, b) => sort_by_ticker(a, b, 'descending'))
+
+                }
+                stockButtons.forEach(element => {
+                    stockButtonHolder.appendChild(element)
+                });
+            })
+        </script>
+        <script>
+            const todayOrTotalButton = document.getElementById("todayOrTotal")
+            todayOrTotalButton.addEventListener("click", (e) => {
+                var stockButtons = document.querySelectorAll("div.stockButton")
+                currentShowing = todayOrTotalButton.innerText
+                if (currentShowing === "Today's Price") {
+                    todayOrTotalButton.innerText = "Total value"
+
+                } else if (currentShowing === "Total value") {
+                    todayOrTotalButton.innerText = "Today's Price"
+                }
+            })
+        </script>
+
+
+    </body>
